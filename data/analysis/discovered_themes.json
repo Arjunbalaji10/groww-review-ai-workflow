@@ -1,0 +1,54 @@
+{
+  "themes": [
+    {
+      "theme": "Performance & Speed Issues",
+      "description": "Users consistently report that the app becomes slow, lags, or hangs—especially after updates—causing frustration during trading and chart viewing.",
+      "keywords": [
+        "slow",
+        "lag",
+        "hang",
+        "chart delay",
+        "sluggish"
+      ]
+    },
+    {
+      "theme": "Bugs & Crashes",
+      "description": "Multiple reviews mention crashes, bugs, and missing features that prevent smooth operation or cause errors during transactions.",
+      "keywords": [
+        "crash",
+        "bug",
+        "error",
+        "missing feature"
+      ]
+    },
+    {
+      "theme": "High Fees & Charges",
+      "description": "Customers express dissatisfaction with brokerage costs, external taxes, and overall fee structure, feeling that charges are higher than competitors.",
+      "keywords": [
+        "high brokerage",
+        "external tax",
+        "fees"
+      ]
+    },
+    {
+      "theme": "Missing Features & Functionality",
+      "description": "Users request additional capabilities such as note-taking, purchase price display, chart indicators, and UI customization options that are currently absent.",
+      "keywords": [
+        "notes",
+        "purchase price",
+        "chart indicators",
+        "hide section"
+      ]
+    },
+    {
+      "theme": "Customer Support Issues",
+      "description": "Several reviews highlight poor or delayed customer support, with users reporting unhelpful responses and long wait times for resolution.",
+      "keywords": [
+        "support",
+        "customer service",
+        "delay",
+        "unhelpful"
+      ]
+    }
+  ]
+}

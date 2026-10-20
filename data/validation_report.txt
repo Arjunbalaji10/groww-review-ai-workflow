@@ -1,0 +1,85 @@
+Groww Google Play reviews - validation report
+====================================================
+Source file: data/reviews_raw.csv
+Mode: read-only. No reviews were invented, rewritten, or deleted.
+
+Row count (as stored in CSV): 12835
+Column names: review_id, date, rating, review_text
+
+1. Required columns
+----------------------------------------------------
+PASS: all required columns are present (review_id, date, rating, review_text).
+No extra columns.
+
+2. Missing values and duplicate review IDs
+----------------------------------------------------
+  review_id: 0 missing/blank
+  date: 0 missing/blank
+  rating: 0 missing/blank
+  review_text: 0 missing/blank
+  Duplicate review_id values: 0
+  Rows involved in those duplicates: 0
+  Extra copies beyond the first occurrence: 0
+  PASS: no duplicate review IDs.
+
+3. Rating values
+----------------------------------------------------
+  Missing ratings: 0
+  Non-numeric ratings: 0
+  Integer ratings 1-5: 12835
+  Invalid ratings (missing, non-integer, or outside 1-5): 0
+  Observed min/max among numeric ratings: 1 / 5
+  Counts by valid rating:
+    1: 1329
+    2: 213
+    3: 355
+    4: 1033
+    5: 9905
+  PASS: every rating is an integer from 1 to 5.
+
+4. Date range
+----------------------------------------------------
+  Missing dates: 0
+  Unparseable dates: 0
+  Minimum date: 2026-07-27
+  Maximum date: 2026-10-18
+  Expected coverage: 2026-07-27 through 2026-10-19 (latest review may be 2026-10-18).
+  Reviews on 2026-07-27: 159
+  Reviews on 2026-10-18: 47
+  Reviews on 2026-10-19: 0
+  Reviews before 2026-07-27: 0
+  Reviews after 2026-10-19: 0
+  PASS: data covers 27 Jul 2026 through the latest available review on 18 Oct 2026 (19 Oct 2026 is allowed as the window end; 18 Oct is accepted).
+
+5. Blank reviews and short reviews
+----------------------------------------------------
+  Blank reviews (missing or whitespace-only): 0
+  Reviews with fewer than 5 words (excluding blanks): 9604
+  Reviews with 5 or more words: 3231
+  These rows were counted only. They were not deleted or rewritten.
+
+6. Review counts by Monday-starting week
+----------------------------------------------------
+  Week definition: Monday through Sunday. Week label is the Monday date.
+  Weeks represented: 12
+  2026-07-27 to 2026-08-02: 1117
+  2026-08-03 to 2026-08-09: 1224
+  2026-08-10 to 2026-08-16: 1113
+  2026-08-17 to 2026-08-23: 1084
+  2026-08-24 to 2026-08-30: 1358
+  2026-08-31 to 2026-09-06: 1196
+  2026-09-07 to 2026-09-13: 1060
+  2026-09-14 to 2026-09-20: 1000
+  2026-09-21 to 2026-09-27: 1056
+  2026-09-28 to 2026-10-04: 870
+  2026-10-05 to 2026-10-11: 909
+  2026-10-12 to 2026-10-18: 848
+  Weekly total: 12835
+  PASS: weekly counts sum to the number of rows with valid dates.
+
+7. Integrity
+----------------------------------------------------
+  collect_reviews.py was not modified.
+  data/reviews_raw.csv was not modified.
+  No reviews were invented, rewritten, or silently deleted.
+
