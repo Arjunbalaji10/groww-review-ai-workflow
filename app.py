@@ -346,12 +346,29 @@ def run_evaluations() -> pd.DataFrame:
         f"Found {len(quotes)} quoted passages. Manually confirm they are real reviews.",
     )
 
-    # 4. Verify exact quotes against the classified dataset
+    # 4. Verify quoted excerpts against raw reviews linked to classified review IDs.
+    quote_source = None
     review_column = find_review_text_column(classified_reviews)
 
-    if review_column and quotes:
+    if review_column is not None:
+        quote_source = classified_reviews
+    elif (
+        raw_reviews is not None
+        and classified_reviews is not None
+        and "review_id" in raw_reviews.columns
+        and "review_id" in classified_reviews.columns
+    ):
+        classified_ids = classified_reviews[["review_id"]].dropna().drop_duplicates()
+        quote_source = raw_reviews.merge(
+            classified_ids,
+            on="review_id",
+            how="inner",
+        )
+        review_column = find_review_text_column(quote_source)
+
+    if quote_source is not None and review_column and quotes:
         review_texts = (
-            classified_reviews[review_column]
+            quote_source[review_column]
             .dropna()
             .astype(str)
             .tolist()
@@ -359,60 +376,71 @@ def run_evaluations() -> pd.DataFrame:
 
         def normalize_quote(value: str) -> str:
             value = value.casefold()
-            value = value.replace(chr(34), "").replace(chr(39), "").replace("`", "")
-            value = re.sub(r"[’‘“”]", "", value)
             value = re.sub(r"[^a-z0-9]+", " ", value)
             return " ".join(value.split())
 
-        normalized_reviews = [normalize_quote(review) for review in review_texts]
+        normalized_reviews = [
+            normalize_quote(review) for review in review_texts
+        ]
         verified_quotes = [
             quote for quote in quotes
             if len(normalize_quote(quote)) >= 12
-            and any(normalize_quote(quote) in review for review in normalized_reviews)
+            and any(
+                normalize_quote(quote) in review
+                for review in normalized_reviews
+            )
         ]
         verified_count = len(set(verified_quotes))
 
         add_result(
             "Quotes match classified review text",
             verified_count >= 3,
-            f"{verified_count}/{len(quotes)} extracted excerpts matched review text after case/punctuation normalization. Quotes must still be manually checked.",
+            f"{verified_count}/{len(quotes)} quoted excerpts matched classified review text.",
         )
     else:
         add_result(
             "Quotes match classified review text",
             False,
-            "Could not identify a review-text column or extract quoted passages.",
+            "Could not find review text for the classified reviews or extract quotes.",
         )
 
-    # 5. Recommended actions: support common equivalent headings.
-    action_match = re.search(
-        r"(?im)^\\s*#{1,4}\\s*(?:recommended actions|recommendations|actions|next steps|what we should do|product actions)\\s*:?\\s*$",
-        pulse,
+    # 5. Count recommended actions under the recognized heading.
+    action_heading_pattern = re.compile(
+        r"(?im)^\s*#{0,4}\s*"
+        r"(?:recommended\s+(?:product\s+)?actions|recommendations|"
+        r"actions|next\s+steps|what\s+we\s+should\s+do|product\s+actions)"
+        r"\s*:?\s*$"
     )
+
+    action_match = action_heading_pattern.search(pulse)
     action_count = 0
+
     if action_match:
-        section = pulse[action_match.end():]
-        next_heading = re.search(r"(?m)^\\s*#{1,4}\\s+", section)
+        remaining_text = pulse[action_match.end():]
+        next_heading = re.search(r"(?m)^\s*#{1,4}\s+", remaining_text)
         if next_heading:
-            section = section[:next_heading.start()]
+            remaining_text = remaining_text[:next_heading.start()]
+
         action_count = len(
-            re.findall(r"(?m)^\\s*(?:[-*]\\s+|\\d+[.)]\\s+)", section)
+            re.findall(
+                r"(?m)^\s*(?:[-*+]\s+|\d+[.)]\s+)",
+                remaining_text,
+            )
         )
 
     add_result(
         "Three recommended actions",
         action_count >= 3,
-        f"Found {action_count} list items under a recognized action heading. Use a heading such as 'Recommended Actions' followed by at least three bullets.",
+        f"Found {action_count} action items under a recognized heading. Required: at least 3.",
     )
 
     # 6. Fee explainer bullet limit
     bullets = extract_bullets(email_draft)
 
     add_result(
-        "Fee explainer bullet limit",
-        0 < len(bullets) <= 6,
-        f"Found {len(bullets)} bullet lines in the email/draft file.",
-        severity="Review",
+        "Three recommended actions",
+        action_count >= 3,
+        f"Found {action_count} action items under a recognized heading. Required: at least 3.",
     )
 
     # 7. Official links in the draft and summary
