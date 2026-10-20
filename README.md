@@ -1,7 +1,3 @@
-\# Groww Review Analysis AI Workflow
-
-
-
 \## Overview
 
 An AI workflow that analyzes Groww app reviews, identifies recurring product issues and potential fee confusion, and generates a weekly product pulse and customer-facing fee clarification.
