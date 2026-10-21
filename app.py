@@ -1,8 +1,15 @@
 import streamlit as st
 import asyncio
 import sys
-from mcp import ClientSession, StdioServerParameters
-from mcp.client.stdio import stdio_client
+try:
+    from mcp import ClientSession, StdioServerParameters
+    from mcp.client.stdio import stdio_client
+    MCP_CLIENT_AVAILABLE = True
+except ImportError:
+    ClientSession = None
+    StdioServerParameters = None
+    stdio_client = None
+    MCP_CLIENT_AVAILABLE = False
 from pathlib import Path
 from datetime import date
 from urllib.parse import urlparse
@@ -40,6 +47,11 @@ OFFICIAL_LINKS = [
 ]
 def call_local_mcp_tool(tool_name: str, arguments: dict) -> str:
     """Call a tool on the local MCP server over stdio."""
+    if not MCP_CLIENT_AVAILABLE:
+        raise RuntimeError(
+            "MCP client dependency is unavailable in this deployment. "
+            "Use the local environment for MCP approval actions."
+        )
 
     async def _call() -> str:
         server_params = StdioServerParameters(
