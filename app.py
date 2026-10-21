@@ -1,4 +1,8 @@
-
+import streamlit as st
+import asyncio
+import sys
+from mcp import ClientSession, StdioServerParameters
+from mcp.client.stdio import stdio_client
 from pathlib import Path
 from datetime import date
 from urllib.parse import urlparse
@@ -34,7 +38,36 @@ OFFICIAL_LINKS = [
     "https://groww.in/help/stocks/sx-reports/what-are-the-different-charges-mentioned-in-the-report",
     "https://groww.in/help/payments/payments-charges/where-can-i-see-the-fees-i-ve-been-charged--43",
 ]
+def call_local_mcp_tool(tool_name: str, arguments: dict) -> str:
+    """Call a tool on the local MCP server over stdio."""
 
+    async def _call() -> str:
+        server_params = StdioServerParameters(
+            command=sys.executable,
+            args=[str(MCP_FILE)],
+            cwd=str(ROOT),
+        )
+
+        async with stdio_client(server_params) as (read, write):
+            async with ClientSession(read, write) as session:
+                await session.initialize()
+                result = await session.call_tool(
+                    tool_name,
+                    arguments=arguments,
+                )
+
+                if result.isError:
+                    raise RuntimeError(
+                        f"MCP tool {tool_name} returned an error."
+                    )
+
+                return "\n".join(
+                    item.text
+                    for item in result.content
+                    if hasattr(item, "text")
+                )
+
+    return asyncio.run(_call())
 
 # ============================================================
 # Page setup
@@ -42,7 +75,7 @@ OFFICIAL_LINKS = [
 
 st.set_page_config(
     page_title="Groww Review Intelligence",
-    page_icon="📊",
+    page_icon="ðŸ“Š",
     layout="wide",
     initial_sidebar_state="expanded",
 )
@@ -171,7 +204,7 @@ def count_words(text: str) -> int:
     cleaned = re.sub(r"\[([^\]]+)\]\([^)]+\)", r"\1", cleaned)
     cleaned = re.sub(r"(?m)^\s*#{1,6}\s*", "", cleaned)
     cleaned = re.sub(r"[*_`>#]", " ", cleaned)
-    return len(re.findall(r"\b[\w’'-]+\b", cleaned))
+    return len(re.findall(r"\b[\wâ€™'-]+\b", cleaned))
 
 
 def extract_urls(text: str) -> list[str]:
@@ -203,13 +236,17 @@ def extract_bullets(text: str) -> list[str]:
 
 
 def extract_quotes(text: str) -> list[str]:
-    """Extract customer excerpts wrapped in common Markdown quote styles."""
-    curly = re.findall(r"“([^”]+)”", text)
-    straight = re.findall(r'"([^"]+)"', text)
-    single_curly = re.findall(r"‘([^’]+)’", text)
-    inline_code = re.findall(r"`([^`]{12,})`", text)
-    candidates = curly + straight + single_curly + inline_code
-    # De-duplicate while preserving order.
+    """Extract excerpts enclosed in straight or Unicode quotation marks."""
+    patterns = [
+        r"\u201c([^\u201d]+)\u201d",
+        r'"([^"]{12,})"',
+        r"\u2018([^\u2019]+)\u2019",
+        r"`([^`]{12,})`",
+    ]
+    candidates = []
+    for pattern in patterns:
+        candidates.extend(re.findall(pattern, text))
+
     return list(dict.fromkeys(q.strip() for q in candidates if q.strip()))
 
 
@@ -335,7 +372,7 @@ def run_evaluations() -> pd.DataFrame:
     add_result(
         "Weekly pulse word limit",
         0 < pulse_word_count <= 250,
-        f"{pulse_word_count} words; required range: 1–250.",
+        f"{pulse_word_count} words; required range: 1â€“250.",
     )
 
     # 3. Customer quote count
@@ -532,13 +569,13 @@ def run_evaluations() -> pd.DataFrame:
         rating_ok = len(ratings) > 0 and bool(valid_ratings.all())
 
         add_result(
-            "Ratings in range 1–5",
+            "Ratings in range 1â€“5",
             rating_ok,
-            f"{int(valid_ratings.sum())}/{len(ratings)} ratings are numeric and within 1–5.",
+            f"{int(valid_ratings.sum())}/{len(ratings)} ratings are numeric and within 1â€“5.",
         )
     else:
         add_result(
-            "Ratings in range 1–5",
+            "Ratings in range 1â€“5",
             False,
             "Could not identify a rating column.",
         )
@@ -668,7 +705,7 @@ def run_evaluations() -> pd.DataFrame:
 # Sidebar navigation
 # ============================================================
 
-st.sidebar.markdown("## ◉ Groww Intelligence")
+st.sidebar.markdown("## â—‰ Groww Intelligence")
 st.sidebar.caption("PRODUCT FEEDBACK WORKFLOW")
 
 # Keep navigation state across Streamlit reruns.
@@ -684,17 +721,17 @@ def nav_item(label: str, icon: str, page_name: str) -> None:
         st.rerun()
 
 st.sidebar.markdown("#### Analyse")
-nav_item("Overview", "▦", "Overview")
-nav_item("Weekly Pulse", "↗", "Weekly Pulse")
-nav_item("Fee Explainer", "▤", "Fee Explainer")
-nav_item("Review Evidence", "⌕", "Review Evidence")
+nav_item("Overview", "â–¦", "Overview")
+nav_item("Weekly Pulse", "â†—", "Weekly Pulse")
+nav_item("Fee Explainer", "â–¤", "Fee Explainer")
+nav_item("Review Evidence", "âŒ•", "Review Evidence")
 
 st.sidebar.markdown("#### Publish")
-nav_item("Approve & Export", "✓", "Approve & Export")
-nav_item("History", "◷", "History")
+nav_item("Approve & Export", "âœ“", "Approve & Export")
+nav_item("History", "â—·", "History")
 
 st.sidebar.markdown("#### Quality")
-nav_item("Evals", "☷", "Evals")
+nav_item("Evals", "â˜·", "Evals")
 
 page = st.session_state["active_page"]
 
@@ -867,7 +904,7 @@ elif page == "Review Evidence":
 elif page == "Approve & Export":
     st.subheader("Human approval")
     st.write(
-        "Review the saved outputs before approving a downloadable package."
+        "Review the saved outputs before approving the local MCP actions."
     )
 
     approval_confirmed = st.checkbox(
@@ -876,7 +913,7 @@ elif page == "Approve & Export":
     )
 
     if not approval_confirmed:
-        st.warning("Approval pending. Downloadable approval package is disabled.")
+        st.warning("Approval pending. No MCP action has been performed.")
     else:
         payload = {
             "date": date.today().isoformat(),
@@ -884,28 +921,106 @@ elif page == "Approve & Export":
                 "High Fees & Charges",
                 "Bugs & Crashes",
                 "Customer Support Issues",
-                "Performance & Speed Issues",
-                "Missing Features & Functionality",
             ],
             "weekly_pulse": pulse,
             "identified_fee_issue": (
-                "Some reviewers report confusion about trading charges and "
-                "final proceeds. These reports do not establish that any "
-                "charge was incorrect."
+                "Some reviewers report confusion about trading charges "
+                "and final proceeds. These reports do not establish that "
+                "any charge was incorrect."
             ),
             "explanation_bullets": extract_bullets(email_draft),
-            "source_links": OFFICIAL_LINKS,
-            "approval_status": "APPROVED",
-            "destination_status": (
-                "Download only; no Google Docs or Gmail action performed."
-            ),
+            "source_links": OFFICIAL_LINKS[:2],
         }
 
-        st.success("Prototype export approved for download.")
+        approval_status = "APPROVED"
+
+        st.warning(
+            "Approval authorizes local document and draft-file actions only. "
+            "No Google Docs or Gmail account is connected."
+        )
+
+        if st.button("Run approved MCP actions", key="run_approved_mcp"):
+            try:
+                import hashlib
+
+                approval_payload = {
+                    key: payload[key]
+                    for key in (
+                        "date",
+                        "top_themes",
+                        "weekly_pulse",
+                        "identified_fee_issue",
+                        "explanation_bullets",
+                        "source_links",
+                    )
+                }
+
+                serialized = json.dumps(
+                    approval_payload,
+                    sort_keys=True,
+                    ensure_ascii=False,
+                )
+                approval_hash = hashlib.sha256(
+                    serialized.encode("utf-8")
+                ).hexdigest()
+
+                append_result = call_local_mcp_tool(
+                    "append_to_doc",
+                    {
+                        **approval_payload,
+                        "approval_status": approval_status,
+                        "approval_hash": approval_hash,
+                    },
+                )
+
+                st.write("Document action:", append_result)
+
+                if not append_result.startswith(
+                    "Approved update appended and verified"
+                ):
+                    st.error(
+                        "Document action did not confirm success. "
+                        "Email draft was not created."
+                    )
+                else:
+                    fee_explanation = "\n".join(
+                        f"- {bullet.lstrip('-* ').strip()}"
+                        for bullet in payload["explanation_bullets"]
+                    )
+
+                    email_result = call_local_mcp_tool(
+                        "create_email_draft",
+                        {
+                            "subject": (
+                                "Weekly Product Pulse + Customer Clarification "
+                                "â€” Groww charges"
+                            ),
+                            "weekly_pulse": payload["weekly_pulse"],
+                            "fee_explanation": fee_explanation,
+                            "approval_status": approval_status,
+                        },
+                    )
+                    st.write("Email draft action:", email_result)
+                    st.success(
+                        "Local MCP actions completed. No email was sent."
+                    )
+
+            except Exception as exc:
+                st.error(f"MCP action failed: {exc}")
 
         st.download_button(
             "Download approved update (JSON)",
-            data=json.dumps(payload, ensure_ascii=False, indent=2),
+            data=json.dumps(
+                {
+                    **payload,
+                    "approval_status": approval_status,
+                    "destination_status": (
+                        "Local MCP actions only; no Google Docs or Gmail action."
+                    ),
+                },
+                ensure_ascii=False,
+                indent=2,
+            ),
             file_name="approved_product_update.json",
             mime="application/json",
             key="download_approved_json",
@@ -926,13 +1041,6 @@ elif page == "Approve & Export":
             mime="text/markdown",
             key="download_approved_fee",
         )
-
-    st.info(
-        "This checkbox controls prototype downloads only. It is not a "
-        "replacement for the separate MCP server's approval and hash validation."
-    )
-
-
 # ============================================================
 # Evals
 # ============================================================
@@ -989,7 +1097,7 @@ elif page == "Evals":
             st.markdown("### Checks needing attention")
             for _, row in failed_results.iterrows():
                 st.markdown(
-                    f"- **{row['Evaluation']}** — {row['Details']}"
+                    f"- **{row['Evaluation']}** â€” {row['Details']}"
                 )
 
 
@@ -1047,6 +1155,7 @@ elif page == "History":
 
 st.divider()
 st.caption(
-    "Milestone 5 prototype · Human review required · "
-    "Local file outputs · No automatic email sending"
+    "Milestone 5 prototype Â· Human review required Â· "
+    "Local file outputs Â· No automatic email sending"
 )
+
