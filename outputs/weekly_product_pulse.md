@@ -21,9 +21,8 @@ Within the classified sample, fee concerns and reports of unresolved support iss
 
 **Data limitation:** Only 865 of 12,835 collected reviews (6.74%) have been classified. These results are preliminary and may not represent all Groww reviews.
 
-## Recommended product actions
+## Recommended Actions
 
-1. **Improve fee transparency:** Make the applicable charge breakdown easier to find before and after a trade.
-2. **Investigate onboarding failures:** Reproduce PAN-name validation failures and ensure users have a clear recovery or support path.
-3. **Improve issue resolution:** Review support complaints and measure resolution time and repeat contacts.
-
+- **Improve fee transparency:** Make the applicable charge breakdown easier to find before and after a trade.
+- **Investigate onboarding failures:** Reproduce PAN-name validation failures and ensure users have a clear recovery or support path.
+- **Improve issue resolution:** Review support complaints and measure resolution time and repeat contacts.

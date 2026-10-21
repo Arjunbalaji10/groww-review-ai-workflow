@@ -1,90 +1,64 @@
-\## Overview
+# Groww Review Intelligence Workflow
 
-An AI workflow that analyzes Groww app reviews, identifies recurring product issues and potential fee confusion, and generates a weekly product pulse and customer-facing fee clarification.
+## Overview
 
+An AI workflow that analyzes Groww app reviews, identifies recurring product issues and potential fee confusion, and generates a weekly product pulse and a reusable customer-facing fee clarification.
 
+## Features
 
-\## Features
+- Validate and analyze review data.
+- Discover and classify product feedback themes.
+- Identify fee-related reviews and categorize candidate issues.
+- Generate a weekly product pulse and customer email draft.
+- Provide approval-gated MCP tools for supported local-file operations.
+- Save reports and draft outputs locally.
 
-\- Validate and analyze review data.
+## Project Structure
 
-\- Discover and classify review themes.
+- `data/` — raw review dataset and analysis files.
+- `outputs/` — product pulse, analysis summary, and draft outputs.
+- `src/mcp_server.py` — MCP server and its supported tools.
+- `source_urls.md` — source references.
+- `Evidensces/` — screenshots of workflow and MCP tests.
 
-\- Identify reviews mentioning fees and charges.
+## Setup
 
-\- Generate a weekly product pulse and fee explanation.
+Use a Python version supported by the project's installed dependencies.
 
-\- Use MCP tools with approval checks before writing updates or creating an email draft.
-
-\- Save approved updates and email drafts locally.
-
-
-
-\## Project Structure
-
-\- `data/` — raw review dataset and analysis files.
-
-\- `outputs/` — product pulse, analysis summary, and draft outputs.
-
-\- `src/mcp\_server.py` — MCP server and approval-gated tools.
-
-\- `source\_urls.md` — source references.
-
-\- `Evidensces/` — screenshots of MCP tests.
-
-
-
-\## Setup
-
-Use Python 3.10 or newer if supported by the installed dependencies.
-
-
+Install dependencies:
 
 ```bash
-
 python -m pip install -r requirements.txt
-
 ```
 
+Create a local `.env` file with your own `GROQ_API_KEY` and, if needed, `GROQ_MODEL`. Never commit API keys or `.env` to GitHub.
 
-
-Create a local `.env` file containing your own `GROQ\_API\_KEY` and, if required, `GROQ\_MODEL`. Never commit `.env` or API keys.
-
-
-
-\## Run the MCP Server
+## Run the Dashboard
 
 ```bash
-
-python src/mcp\_server.py
-
+python -m streamlit run app.py
 ```
 
+## Run the MCP Server
 
+```bash
+python src/mcp_server.py
+```
 
 To test with MCP Inspector:
 
 ```bash
-
-npx -y @modelcontextprotocol/inspector python src/mcp\_server.py
-
+npx -y @modelcontextprotocol/inspector python src/mcp_server.py
 ```
 
+## Approval and Outputs
 
+The workflow includes approval checks for supported MCP operations. The current dashboard supports local report and draft outputs. It does **not** publish to a live Google Doc or create an email draft in Gmail; Google Docs and Gmail integrations are not configured. Do not describe a local export as a completed external action.
 
-\## Approval and Outputs
+## Research Limitations
 
-The MCP tools require approval parameters before writing updates or creating a draft. Outputs are saved locally under `outputs/`. The email tool creates a draft file only; it does not send email.
+The raw dataset contains 12,835 reviews. The classified dataset currently contains 865 reviews, or approximately **6.74%** of the raw dataset. Findings are preliminary and may not represent the full review population.
 
+The fee candidate dataset contains 339 reviews across five candidate categories. These categories indicate possible themes for further review; they do not verify incorrect charges or establish a billing error.
 
-
-\*\*Limitation:\*\* Google Docs and Gmail OAuth integrations are not configured. This version uses local files rather than writing to a live Google Doc or creating a draft in Gmail.
-
-
-
-\## Research Limitations
-
-The review classification is preliminary and may cover only a subset of the available reviews. Fee-related review text indicates reported user confusion; it does not establish that a fee was incorrectly charged. Refer to official Groww pages in `source\_urls.md` for fee information.
-
-
-
+Use the official Groww references in `source_urls.md` when preparing customer-facing fee explanations. Review the generated content before using or sending it.
